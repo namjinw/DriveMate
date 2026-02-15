@@ -1,5 +1,37 @@
 import 'dart:io';
 
+class Car {
+  String carId;
+  String carNm;
+  String carNo;
+  String carImage;
+  String temperature;
+  String weather;
+  String location;
+
+  Car({
+    required this.carId,
+    required this.carNm,
+    required this.carNo,
+    required this.carImage,
+    required this.temperature,
+    required this.weather,
+    required this.location,
+  });
+
+  factory Car.fromJson(Map<String, dynamic> json) {
+    return Car(
+      carId: json['carId'],
+      carNm: json['carNm'],
+      carNo: json['carNo'],
+      carImage: json['carImage'],
+      temperature: json['temperature'],
+      weather: json['weather'],
+      location: json['location'],
+    );
+  }
+}
+
 class CarResponse {
   final String STATUS_CD;
   final String message;

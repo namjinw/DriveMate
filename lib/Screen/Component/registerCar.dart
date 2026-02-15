@@ -50,6 +50,13 @@ class _Registercar_DialogState extends State<Registercar_Dialog> {
     }
   }
 
+  @override
+  void dispose() {
+    carName.dispose();
+    carNum.dispose();
+    super.dispose();
+  }
+
   // ImagePicker는
   // 📱 운영체제(안드로이드/iOS)의 카메라 앱이나 갤러리 앱을 호출하는 브릿지(중간 다리) 역할
 
@@ -228,6 +235,7 @@ class _Registercar_DialogState extends State<Registercar_Dialog> {
         final response = await RegisterController.carUpload(carName.text, carNum.text, seletImage!, LoginController.user['token']!);
 
         if (response != null && response.STATUS_CD == 'S') {
+          await RegisterController.GetCar(LoginController.user['token']!);
           Navigator.pop(context);
           showSnackBar(context, Icons.directions_car, response.message);
         } else {

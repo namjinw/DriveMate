@@ -1,4 +1,5 @@
 import 'package:drivemate/Controller/login.dart';
+import 'package:drivemate/Controller/register.dart';
 import 'package:drivemate/Model/user.dart';
 import 'package:drivemate/Screen/slectCar.dart';
 import 'package:drivemate/utils.dart';
@@ -19,6 +20,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController username = TextEditingController();
   final TextEditingController password = TextEditingController();
   bool check = false;
+
+  @override
+  void dispose() {
+    username.dispose();
+    password.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mberNm: response.mberNm,
                   );
                   LoginController.user['token'] = response.token;
+                  await RegisterController.GetCar(response.token);
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => SelectCarScreen()),

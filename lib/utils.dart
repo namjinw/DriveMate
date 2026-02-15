@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 const background = Colors.black;
+const homeBackground = Color(0xffffffff);
 const myFont = 'Noto_Sans_KR';
 const white = Colors.white;
 const logoColor = Color(0xFFD39F8D);
