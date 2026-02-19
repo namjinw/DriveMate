@@ -7,9 +7,14 @@ const white = Colors.white;
 const logoColor = Color(0xFFD39F8D);
 const dialogColor = Color(0xfff1f1f1);
 const textColor = Color(0xff656565);
-const String BaseUrl = 'http://192.168.219.100:8000';
+const String BaseUrl = 'http://192.168.219.102:8000';
 const Map<String, String> header = {
   'Content-Type': 'application/x-www-form-urlencoded',
+};
+
+Map<String, String> controllHeader(String token) => {
+  'Content-Type': 'application/json',
+  'Authorization': 'Bearer $token',
 };
 
 Text myText(text, double size, color, weight) => Text(
@@ -44,14 +49,7 @@ myDialog(context, text) => showDialog(
   builder: (context) => AlertDialog(
     content: Container(
       height: 50,
-      child: Center(
-        child: myText(
-          text,
-          15,
-          background,
-          FontWeight.w700,
-        ),
-      ),
+      child: Center(child: myText(text, 15, background, FontWeight.w700)),
     ),
     actions: [
       Center(

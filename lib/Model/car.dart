@@ -8,6 +8,7 @@ class Car {
   String temperature;
   String weather;
   String location;
+  int drvngPosblDstnc;
 
   Car({
     required this.carId,
@@ -17,6 +18,7 @@ class Car {
     required this.temperature,
     required this.weather,
     required this.location,
+    required this.drvngPosblDstnc
   });
 
   factory Car.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Car {
       temperature: json['temperature'],
       weather: json['weather'],
       location: json['location'],
+      drvngPosblDstnc: json['drvngPosblDstnc']
     );
   }
 }

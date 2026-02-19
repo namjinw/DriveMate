@@ -1,8 +1,16 @@
+import 'dart:async';
+
+import 'package:drivemate/Controller/login.dart';
 import 'package:drivemate/Controller/register.dart';
+import 'package:drivemate/Screen/Component/controlMenu.dart';
+import 'package:drivemate/Screen/Component/homeMenu.dart';
 import 'package:drivemate/Screen/slectCar.dart';
 import 'package:drivemate/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+import 'Component/shareMenu.dart';
+import 'Component/statusMenu.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +20,52 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int bottomIndex = 0;
+
+  final List<Widget> pages = [
+    Homemenu(),
+    Controlmenu(),
+    Statusmenu(),
+    Sharemenu(),
+  ];
+
+  final clouds = ['assets/images/cloud2.png', 'assets/images/cloud3.png'];
+
+  final slideController = PageController(initialPage: 99);
+
+  bool runAnim = true;
+
+  Future autoCloud() async {
+    while (mounted && runAnim) {
+      if (!slideController.hasClients) {
+        // PageView에 연결되어 있는지확인
+        // 연결 되어 있지 않다면 기다리고 다음으로 가기
+        await Future.delayed(Duration(milliseconds: 50));
+        continue;
+      }
+      await slideController.nextPage(
+        duration: const Duration(seconds: 15),
+        curve: Curves.linear,
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      autoCloud();
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    runAnim = false;
+    slideController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,24 +80,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: [0.0, 0.686, 0.795, 1.0],
+                  stops: [0.0, 0.45, 0.55, 1.0],
                   colors: [Color(0xffaaaaaa), Color(0xff818181), white, white],
                 ),
               ),
-              child: SafeArea(child: Column()),
             ),
           ),
+          cloud(),
+          IndexedStack(index: bottomIndex, children: pages),
           bottomBar(),
         ],
       ),
     );
   }
 
+  Widget cloud() => Positioned(
+    left: 0,
+    top: 0,
+    right: 0,
+    child: Container(
+      width: sizew(context),
+      height: 320,
+      alignment: Alignment.topCenter,
+      child: PageView.builder(
+        controller: slideController,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (context, index) => Image.asset(
+          clouds[index % clouds.length],
+          width: sizew(context),
+          fit: BoxFit.cover,
+        ),
+      ),
+    ),
+  );
+
   AppBar appBar() => AppBar(
     backgroundColor: Colors.transparent,
-    toolbarHeight: 125,
     title: SizedBox(
-      height: 125,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -51,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [appBarLeft(), appBarRight()],
           ),
-          carState(),
         ],
       ),
     ),
@@ -84,14 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
     textBaseline: TextBaseline.alphabetic,
     children: [
       SizedBox(width: 4),
-      IconButton(
-        onPressed: () {},
-        icon: SvgPicture.asset(
-          'assets/images/notifications.svg',
-          width: 30,
-          colorFilter: ColorFilter.mode(background, BlendMode.srcIn),
-        ),
-      ),
+      alarmButton(),
       IconButton(
         onPressed: () {},
         icon: SvgPicture.asset(
@@ -103,40 +168,44 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
-  Widget carState() => Column(
+  Widget alarmButton() => Stack(
     children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          stateItem(
-            'sunny.svg',
-            RegisterController.selectedCar.temperature,
-            background,
-          ),
-          stateItem('local_gas.svg', RegisterController.selectedCar.weather, background),
-        ],
+      IconButton(
+        onPressed: () {
+          if (RegisterController.selectedCar.drvngPosblDstnc < 50) {
+            showSnackBar(context, Icons.notifications, '주행가능 거리가 50km미만 입니다.');
+          } else {
+            showSnackBar(context, Icons.notifications_none, '새로운 알림이 없습니다.');
+          }
+        },
+        icon: SvgPicture.asset(
+          'assets/images/notifications.svg',
+          width: 30,
+          colorFilter: ColorFilter.mode(background, BlendMode.srcIn),
+        ),
       ),
-      SizedBox(height: 6,),
-      stateItem(
-        'my_location.svg',
-        RegisterController.selectedCar.location,
-        background,
-      ),
-    ],
-  );
+      Positioned(
+        right: 7,
+        top: 7,
+        child: IgnorePointer(
+          ignoring: true,
+          child: Opacity(
+            opacity: RegisterController.selectedCar.drvngPosblDstnc < 50 ? 1 : 0,
 
-  Widget stateItem(String img, text, color) => Row(
-    crossAxisAlignment: CrossAxisAlignment.baseline,
-    textBaseline: TextBaseline.alphabetic,
-    children: [
-      SvgPicture.asset(
-        'assets/images/$img',
-        width: 25,
-        colorFilter: ColorFilter.mode(background, BlendMode.srcIn),
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text('N', style: TextStyle(color: white, fontSize: 10)),
+              ),
+            ),
+          ),
+        ),
       ),
-      SizedBox(width: 5,),
-      myText(text, 16, color, FontWeight.w400),
     ],
   );
 
@@ -155,6 +224,73 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         border: Border(top: BorderSide(color: Colors.grey, width: 1)),
       ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            spacing: 20,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              bottomItem(icon: Icons.home_outlined, text: 'Home', index: 0),
+              bottomLine(),
+              bottomItem(
+                icon: Icons.control_camera_outlined,
+                text: 'Control',
+                index: 1,
+              ),
+              bottomLine(),
+              bottomItem(
+                text: 'Status',
+                svg: 'directions_car.svg',
+                useSvg: true,
+                index: 2,
+              ),
+              bottomLine(),
+              bottomItem(
+                text: 'Share',
+                svg: 'device_hub_black_24dp.svg',
+                useSvg: true,
+                index: 3,
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
+  );
+
+  Widget bottomItem({icon, text, svg, useSvg = false, required int index}) =>
+      GestureDetector(
+        onTap: () => setState(() => bottomIndex = index),
+        child: Column(
+          children: [
+            useSvg
+                ? SvgPicture.asset(
+                    'assets/images/${svg}',
+                    width: 35,
+                    colorFilter: ColorFilter.mode(
+                      bottomIndex == index ? logoColor : textColor,
+                      BlendMode.srcIn,
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    color: bottomIndex == index ? logoColor : textColor,
+                    size: 35,
+                  ),
+            myText(
+              text,
+              15,
+              bottomIndex == index ? logoColor : textColor,
+              FontWeight.w400,
+            ),
+          ],
+        ),
+      );
+
+  Widget bottomLine() => Container(
+    width: 1,
+    height: 45,
+    decoration: BoxDecoration(color: Colors.grey),
   );
 }

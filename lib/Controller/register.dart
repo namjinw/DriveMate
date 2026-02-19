@@ -15,6 +15,7 @@ class RegisterController {
     temperature: '',
     weather: '',
     location: '',
+    drvngPosblDstnc: 0
   );
 
   static Future<CarResponse?> carUpload(
@@ -73,6 +74,28 @@ class RegisterController {
         final Map<String, dynamic> json = jsonDecode(response.body);
         final List<dynamic> data = json['data'];
         car_list = data.map((e) => Car.fromJson(e)).toList();
+      } else {
+        car_list = [];
+      }
+    } catch (e) {
+      car_list = [];
+    }
+  }
+
+  static Future<void> oneGetCar(String token, String carId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("${BaseUrl}/api/car/${carId}"),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        final dynamic data = json['data'];
+        selectedCar = Car.fromJson(data);
       } else {
         car_list = [];
       }

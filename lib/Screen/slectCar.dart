@@ -1,3 +1,4 @@
+import 'package:drivemate/Controller/login.dart';
 import 'package:drivemate/Controller/register.dart';
 import 'package:drivemate/Screen/Component/registerCar.dart';
 import 'package:drivemate/Screen/home.dart';
@@ -78,9 +79,8 @@ class _SelectCarScreenState extends State<SelectCarScreen> {
       toggle(),
       SizedBox(height: 15),
       button(
-        () {
-          RegisterController.selectedCar =
-              RegisterController.car_list[pageIndex];
+        () async {
+          await RegisterController.oneGetCar(LoginController.user['token']!, RegisterController.car_list[pageIndex].carId);
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),

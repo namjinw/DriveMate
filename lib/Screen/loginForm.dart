@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mberId: response.mberId,
                     mberNm: response.mberNm,
                   );
-                  LoginController.user['token'] = response.token;
+                  LoginController.user = {'mberNm': response.mberNm, 'mberId': response.mberId, 'token': response.token};
                   await RegisterController.GetCar(response.token);
                   Navigator.pushAndRemoveUntil(
                     context,
