@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drivemate/Controller/car_control.dart';
+import 'package:drivemate/Model/carStatus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -16,11 +17,6 @@ class Homemenu extends StatefulWidget {
 }
 
 class _HomemenuState extends State<Homemenu> {
-  String start = '';
-  String door = '';
-  String window = '';
-  String exit = '';
-
   Timer? colorTimer;
   bool colorChange = false;
 
@@ -48,15 +44,15 @@ class _HomemenuState extends State<Homemenu> {
 
   final ScrollController button_scroll = ScrollController();
 
-  @override
-  void dispose() {
-    colorTimer?.cancel();
-    super.dispose();
-  }
-
   double floatBottom = 150;
 
   DateTime? lastRefreshTime;
+
+  final clouds = ['assets/images/cloud2.png', 'assets/images/cloud3.png'];
+
+  final slideController = PageController(initialPage: 99);
+
+  bool runAnim = true;
 
   Future<void> Refresh() async {
     final now = DateTime.now();
@@ -78,9 +74,47 @@ class _HomemenuState extends State<Homemenu> {
     setState(() {});
   }
 
+  Future autoCloud() async {
+    while (mounted && runAnim) {
+      if (!slideController.hasClients) {
+        // PageView에 연결되어 있는지확인
+        // 연결 되어 있지 않다면 기다리고 다음으로 가기
+        await Future.delayed(Duration(milliseconds: 50));
+        continue;
+      }
+      await slideController.nextPage(
+        duration: const Duration(seconds: 15),
+        curve: Curves.linear,
+      );
+    }
+  }
+
+  Future<void> statusToggle(
+    Future<String> Function(String, String) action,
+    onIcon,
+    offIcon,
+    String onMessage,
+    String offMessage,
+  ) async {
+    final response = await action(
+      LoginController.user['token']!,
+      RegisterController.selectedCar.carId,
+    );
+    final isOn = response == 'Y';
+    showSnackBar(
+      context,
+      isOn ? onIcon : offIcon,
+      isOn ? onMessage : offMessage,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      autoCloud();
+    });
 
     button_scroll.addListener(() {
       print(button_scroll.offset);
@@ -91,31 +125,43 @@ class _HomemenuState extends State<Homemenu> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: Refresh,
+  void dispose() {
+    colorTimer?.cancel();
+    runAnim = false;
+    slideController.dispose();
+    super.dispose();
+  }
 
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              controller: button_scroll,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                    child: carState(),
-                  ),
-                  SizedBox(height: 50),
-                  Image.network(
-                    BaseUrl + RegisterController.selectedCar.carImage,
-                  ),
-                  SizedBox(height: 50),
-                  carButton(),
-                  SizedBox(height: 25),
-                  carControl(),
-                ],
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: CarController.carStatus,
+      builder: (context, status, child) => Stack(
+        children: [
+          cloud(),
+          SafeArea(
+            child: RefreshIndicator(
+              onRefresh: Refresh,
+
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                controller: button_scroll,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      child: carState(),
+                    ),
+                    SizedBox(height: 50),
+                    Image.network(
+                      BaseUrl + RegisterController.selectedCar.carImage,
+                    ),
+                    SizedBox(height: 50),
+                    carButton(status),
+                    SizedBox(height: 25),
+                    carControl(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -152,85 +198,77 @@ class _HomemenuState extends State<Homemenu> {
     );
   }
 
-  Widget carButton() => Row(
+  Widget cloud() => Positioned(
+    left: 0,
+    top: 0,
+    right: 0,
+    child: Container(
+      width: sizew(context),
+      height: 320,
+      alignment: Alignment.topCenter,
+      child: PageView.builder(
+        controller: slideController,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (context, index) => Image.asset(
+          clouds[index % clouds.length],
+          width: sizew(context),
+          fit: BoxFit.cover,
+        ),
+      ),
+    ),
+  );
+
+  Widget carButton(CarStatus status) => Row(
     spacing: 20,
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       carButtonItem(
         '시동',
         'power_settings_new_24dp_5F6368_FILL0_wght300_GRAD200_opsz24.svg',
-        () async {
-          final response = await CarController.startCar(
-            LoginController.user['token']!,
-            RegisterController.selectedCar.carId,
-          );
-          start = response;
-          setState(() {});
-          showSnackBar(
-            context,
-            start == 'Y'
-                ? Icons.settings_power_sharp
-                : Icons.power_settings_new_outlined,
-            start == "Y" ? '시동이 켜졌습니다.' : '시동이 꺼졌습니다.',
-          );
-        },
-        start,
+        () => statusToggle(
+          CarController.startCar,
+          Icons.settings_power_outlined,
+          Icons.power_settings_new_outlined,
+          '시동이 켜졌습니다.',
+          '시동이 꺼졌습니다.',
+        ),
+        status.strtgYn,
       ),
       carButtonItem(
         '도어',
         'lock_24dp_5F6368_FILL0_wght400_GRAD0_opsz24.svg',
-        () async {
-          final response = await CarController.FuckingOpenThDoor(
-            LoginController.user['token']!,
-            RegisterController.selectedCar.carId,
-          );
-          door = response;
-          setState(() {});
-          showSnackBar(
-            context,
-            door == 'Y' ? Icons.sensor_door : Icons.sensor_door_outlined,
-            door == "Y" ? '도어가 열렸습니다.' : '도어가 닫혔습니다.',
-          );
-        },
-        door,
+        () => statusToggle(
+          CarController.FuckingOpenThDoor,
+          Icons.sensor_door,
+          Icons.sensor_door_outlined,
+          '도어가 열렸습니다.',
+          '도어가 닫혔습니다.',
+        ),
+        status.doorYn,
       ),
-      carButtonItem('창문', 'car-door-svgrepo-com.svg', () async {
-        final response = await CarController.WindowComputerBooting(
-          LoginController.user['token']!,
-          RegisterController.selectedCar.carId,
-        );
-        window = response;
-        setState(() {});
-        showSnackBar(
-          context,
-          window == 'Y' ? Icons.width_full_outlined : Icons.width_full,
-          window == "Y" ? '창문이 열렸습니다.' : '창문이 닫혔습니다.',
-        );
-      }, window),
+      carButtonItem(
+        '창문',
+        'car-door-svgrepo-com.svg',
+        () => statusToggle(
+          CarController.WindowComputerBooting,
+          Icons.width_full_outlined,
+          Icons.width_full,
+          '창문이 열렸습니다.',
+          '창문이 닫혔습니다.',
+        ),
+        status.wndwYn,
+      ),
       carButtonItem(
         '비상문',
         'warning_24dp_5F6368_FILL0_wght300_GRAD200_opsz24.svg',
-        () async {
-          final response = await CarController.startEmgncLmp(
-            LoginController.user['token']!,
-            RegisterController.selectedCar.carId,
-          );
-          exit = response;
-          if (exit == "Y") {
-            startColorTimer();
-          } else {
-            stopColorTimer();
-          }
-          setState(() {});
-          showSnackBar(
-            context,
-            exit == "Y"
-                ? Icons.report_gmailerrorred_sharp
-                : Icons.report_off_outlined,
-            exit == "Y" ? '비상문이 열렸습니다.' : '비상문이 닫혔습니다.',
-          );
-        },
-        exit,
+        () => statusToggle(
+          CarController.startEmgncLmp,
+          Icons.report_gmailerrorred_sharp,
+          Icons.report_off_outlined,
+          '비상문이 열렸습니다.',
+          '비상문이 닫혔습니다.',
+        ),
+        status.emgncLmpYn,
         emerdency: true,
         colorChange: colorChange,
       ),

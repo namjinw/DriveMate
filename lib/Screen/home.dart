@@ -29,42 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
     Sharemenu(),
   ];
 
-  final clouds = ['assets/images/cloud2.png', 'assets/images/cloud3.png'];
-
-  final slideController = PageController(initialPage: 99);
-
-  bool runAnim = true;
-
-  Future autoCloud() async {
-    while (mounted && runAnim) {
-      if (!slideController.hasClients) {
-        // PageView에 연결되어 있는지확인
-        // 연결 되어 있지 않다면 기다리고 다음으로 가기
-        await Future.delayed(Duration(milliseconds: 50));
-        continue;
-      }
-      await slideController.nextPage(
-        duration: const Duration(seconds: 15),
-        curve: Curves.linear,
-      );
-    }
-  }
-
-  @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      autoCloud();
-    });
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    runAnim = false;
-    slideController.dispose();
-    super.dispose();
-  }
+  final List<String> pageTitle = [
+    'Home',
+    'Control',
+    'Status',
+    'Share',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -77,16 +47,16 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: bottomIndex == 0 ? LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: [0.0, 0.45, 0.55, 1.0],
                   colors: [Color(0xffaaaaaa), Color(0xff818181), white, white],
-                ),
+                ) : null,
+                color: bottomIndex == 0 ? null : white,
               ),
             ),
           ),
-          cloud(),
           IndexedStack(index: bottomIndex, children: pages),
           bottomBar(),
         ],
@@ -94,35 +64,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget cloud() => Positioned(
-    left: 0,
-    top: 0,
-    right: 0,
-    child: Container(
-      width: sizew(context),
-      height: 320,
-      alignment: Alignment.topCenter,
-      child: PageView.builder(
-        controller: slideController,
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) => Image.asset(
-          clouds[index % clouds.length],
-          width: sizew(context),
-          fit: BoxFit.cover,
-        ),
-      ),
-    ),
-  );
-
   AppBar appBar() => AppBar(
-    backgroundColor: Colors.transparent,
+    backgroundColor: bottomIndex == 0 ?  Colors.transparent : white,
+    bottom: PreferredSize(preferredSize: Size.fromHeight(1), child: Container(
+      height: 1,
+      color: bottomIndex == 0 ?  Colors.transparent : Colors.grey,
+    )),
     title: SizedBox(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [appBarLeft(), appBarRight()],
+            children: [appBarLeft(), myText(pageTitle[bottomIndex], 27, background, FontWeight.w700), appBarRight()],
           ),
         ],
       ),
@@ -190,7 +144,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: IgnorePointer(
           ignoring: true,
           child: Opacity(
-            opacity: RegisterController.selectedCar.drvngPosblDstnc < 50 ? 1 : 0,
+            opacity: RegisterController.selectedCar.drvngPosblDstnc < 50
+                ? 1
+                : 0,
 
             child: Container(
               width: 20,
