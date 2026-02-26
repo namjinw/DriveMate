@@ -4,6 +4,7 @@ import 'package:drivemate/Model/carStatus.dart';
 import 'package:drivemate/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CarController {
   static final ValueNotifier<CarStatus> carStatus = ValueNotifier(

@@ -81,6 +81,7 @@ class _SelectCarScreenState extends State<SelectCarScreen> {
       button(
         () async {
           await RegisterController.oneGetCar(LoginController.user['token']!, RegisterController.car_list[pageIndex].carId);
+          await RegisterController.init();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),

@@ -21,6 +21,17 @@ class Car {
     required this.drvngPosblDstnc
   });
 
+  Map<String, dynamic> toJson() => {
+    'carId': carId,
+    'carNm': carNm,
+    'carNo': carNo,
+    'carImage': carImage,
+    'temperature': temperature,
+    'weather': weather,
+    'location': location,
+    'drvngPosblDstnc': drvngPosblDstnc,
+  };
+
   factory Car.fromJson(Map<String, dynamic> json) {
     return Car(
       carId: json['carId'],

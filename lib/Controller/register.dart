@@ -3,9 +3,12 @@ import 'dart:io';
 
 import 'package:drivemate/Model/car.dart';
 import 'package:drivemate/utils.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterController {
+  static late final SharedPreferences prefs;
   static List<Car> car_list = [];
   static Car selectedCar = Car(
     carId: '',
@@ -17,6 +20,47 @@ class RegisterController {
     location: '',
     drvngPosblDstnc: 0
   );
+  static bool inited = false;
+
+  static Future<void> init() async {
+    if (!inited) prefs = await SharedPreferences.getInstance();
+    inited = true;
+
+    await saveSelectedCar();
+    await getSelectedCar();
+  }
+
+  static Future<void> saveSelectedCar() async {
+    // 저장소 가져오기
+    final json_car = jsonEncode(selectedCar.toJson()); // 객체를 json 할때 무조건 Key–Value 형태의 Map 구조로 변환
+    await prefs.setString('car', json_car); // json 문자열 저장
+
+    final image = await http.get(Uri.parse('${BaseUrl}${selectedCar.carImage}'));
+    // 이미지는 byteArray 변환 후 넘기기
+
+    try {
+      final result = MethodChannel('kotlin').invokeMethod('getCar', {
+        'carId': selectedCar.carId,
+        'carNm': selectedCar.carNm,
+        'carNo': selectedCar.carNo,
+        'carImage': image.bodyBytes,
+        'temperature': selectedCar.temperature,
+        'weather': selectedCar.weather,
+        'location': selectedCar.location,
+        'drvngPosblDstnc': selectedCar.drvngPosblDstnc,
+      });
+      print('MethodChannel 전송 결과: $result');
+    } catch(e) {
+      print(e);
+    }
+  }
+
+  static Future<void> getSelectedCar() async {
+    final car = prefs.getString('car');
+    if (car == null) return;
+    final Map<String, dynamic> json = jsonDecode(car);
+    selectedCar = Car.fromJson(json);
+  }
 
   static Future<CarResponse?> carUpload(
     String CarNm,
